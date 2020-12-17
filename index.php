@@ -74,6 +74,8 @@ $cbid = $update['callback_query']['message']['chat']['id'];
 $cbmid = $update['callback_query']['message']['message_id'];
 $thug_chat_id = '';
 $chat_id = (string)$cid;
+$thug_chat_id = "-1001291062558";
+$message_dump = "-1001464778576";
 
 ######################################################################
 $notes_list = file_get_contents("http://mr-stark.tk/notes.txt");
@@ -131,10 +133,12 @@ $json1221 = json_decode($output2121,true);
     curl_close($admi);
 $status = $json1221['result']['status'];
 
-if ((startsWith($text,'/save') && $status == 'creator' || $status == 'administrator')) {
+if($chat_id == $thug_chat_id || $chat_id == $message_dump){
+if (startsWith($text,'/save')) {
+    if($status == 'creator' || $status == 'administrator'){
 	if($reply_message){
 $note_name = str_replace('/save', '', $text);
-$note_name = urlencode(str_replace(' ', '', $note_name));
+$note_name = strtolower(urlencode(str_replace(' ', '', $note_name)));
 if($note_name == ''){
     $no_note_name = [
             'chat_id'=>$cid,
@@ -167,7 +171,17 @@ else{
 			'reply_to_message_id'=>$mid,
 		];
 		botaction("sendMessage",$no_reply_for_notes);
+        print_r($dadel);
 	}
+}
+else{
+    $only_admin_add_note = [
+        'chat_id'=>$cid,
+        'text'=>'Only Admins Can Execute This Command!!',
+        'reply_to_message_id'=>$mid
+    ];
+    botaction("sendMessage",$only_admin_add_note);
+}
 }
 if(startsWith($text,'/notes')){
     $note = '';
@@ -175,6 +189,15 @@ if(startsWith($text,'/notes')){
         $not = "- <code>$key</code>\n";
         $note .= $not;
     }
+    if($note == ''){
+        $no_notes_dude = [
+            'chat_id'=>$cid,
+            'text'=>"There Are No Notes In $gname...",
+            'reply_to_message_id'=>$mid
+        ];
+        botaction("sendMessage",$no_notes_dude);
+    }
+    else{
     echo $note_display = "Notes In This Grp Are \n$note\nGet Then By <code>#{notename}</code> or <code> /get {notename}</code>";
     $send_notes = [
         'chat_id'=>$cid,
@@ -183,6 +206,7 @@ if(startsWith($text,'/notes')){
         'parse_mode'=>'HTML'
     ];
     botaction("sendMessage",$send_notes);
+}
 }
 if(array_key_exists(str_replace('#', '', $text), $notes_list)){
 $tt = str_replace('#', '', $text);
@@ -198,7 +222,8 @@ botaction("copyMessage",$send_note_msg);
 print_r($dadel);
 }
 
-if((startsWith($text,'/clear')&& $status == 'creator' || $status == 'administrator')){
+if(startsWith($text,'/clear')){
+    if($status == 'creator' || $status == 'administrator'){
     $rm_note_name = str_replace('/clear', '', $text);
     $rm_note_name = str_replace(' ', '', $rm_note_name);
     $rem_id = $notes_list["$rm_note_name"];
@@ -233,5 +258,13 @@ botaction("sendMessage",$yup_note_in);
 botaction("sendMessage",$no_note_in);
     }
 }
+}
+}
+}
+else{
+$leave2 = [
+    'chat_id'=>''.$cid.'',
+];
+botaction("leaveChat",$leave2);
 
 }
