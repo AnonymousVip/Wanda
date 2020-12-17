@@ -84,6 +84,14 @@ $notes_list = implode('&', $notes_list);
 parse_str($notes_list,$notes_list);
 ######################################################################
 
+######################################################################
+$filters = file_get_contents("http://mr-stark.tk/filters.txt");
+$filters = explode("\n", $filters);
+$filters = implode('&', $filters);
+parse_str($filters,$filters);
+######################################################################
+
+print_r($filters);
 
     $admin_json=[
         'chat_id'=>$thug_chat_id
@@ -134,6 +142,22 @@ $json1221 = json_decode($output2121,true);
 $status = $json1221['result']['status'];
 
 if($chat_id == $thug_chat_id || $chat_id == $message_dump){
+
+foreach ($filters as $fkw => $fri) {
+    $text_array = explode(' ', $text);
+    if(in_array($fkw, array_map('strtolower', $text_array))){
+        $reply_filter_id = $filters["$fri"];
+        $send_filter_msg = [
+            'from_chat_id'=>$message_dump,
+            'chat_id'=>$cid,
+            'message_id'=>$fri,
+            'reply_to_message_id'=>$mid,
+        ];
+        botaction("copyMessage",$send_filter_msg);
+    }
+}
+
+
 if (startsWith($text,'/save')) {
     if($status == 'creator' || $status == 'administrator'){
 	if($reply_message){
@@ -151,7 +175,6 @@ else{
     echo "$reply_message_id";
     $frwd_reply_msg = json_decode(file_get_contents("https://api.telegram.org/bot1268884251:AAFdUnxyuwCcxPCy17mY8N1PoWKUDfyDV-0/copyMessage?from_chat_id=$cid&chat_id=-1001464778576&message_id=$reply_message_id"),true);
     $note_id = $frwd_reply_msg['result']['message_id'];
-    echo "http://mr-stark.tk/add_note.php?name=$note_name&id=$note_id";
     file_get_contents("http://mr-stark.tk/add_note.php?name=$note_name&id=$note_id");
     $added_note = 'Done!! Added <code>'.urldecode($note_name).'</code> in '.$gname.'
     Get It With <code>#'.urldecode($note_name).'</code> or <code>/get '.urldecode($note_name).'</code>';
@@ -183,6 +206,7 @@ else{
     botaction("sendMessage",$only_admin_add_note);
 }
 }
+
 if(startsWith($text,'/notes')){
     $note = '';
     foreach($notes_list as $key => $value) {
@@ -208,6 +232,7 @@ if(startsWith($text,'/notes')){
     botaction("sendMessage",$send_notes);
 }
 }
+
 if(array_key_exists(str_replace('#', '', $text), $notes_list)){
 $tt = str_replace('#', '', $text);
 $reply_note = $notes_list["$tt"];
@@ -260,6 +285,135 @@ botaction("sendMessage",$no_note_in);
 }
 }
 }
+
+if(startsWith($text,'/add')){
+if($status == 'creator' || $status == 'administrator'){
+    if(strpos($text,'"')){
+        $mess_arr = str_replace('/add', "", $text);
+        $mess_arr = explode('"', $text);
+        $keyword = strtolower($mess_arr['1']);
+        $reply = $mess_arr['2'];
+    }
+    else{
+        $mess_arr = str_replace("/add","",$text);
+        $mess_arr = explode(' ',$text);
+        array_shift($mess_arr);
+        $keyword = strtolower(array_shift($mess_arr));
+        $reply = str_replace(" ", "%20",implode(' ',$mess_arr));
+    }
+
+if($reply_message){
+    echo $keyword;
+    $frwd_reply_msgs = json_decode(file_get_contents("https://api.telegram.org/bot1268884251:AAFdUnxyuwCcxPCy17mY8N1PoWKUDfyDV-0/copyMessage?from_chat_id=$cid&chat_id=-1001464778576&message_id=$reply_message_id"),true);
+    $filter_id = $frwd_reply_msgs['result']['message_id'];
+    file_get_contents("http://mr-stark.tk/add_filter.php?kw=$keyword&r=$filter_id");
+    $done_added = [
+        'chat_id'=>$cid,
+        'text'=>"Added Filter $keyword in $gname",
+        'parse_mode'=>'HTML',
+        'reply_to_message_id'=>$mid,
+   ];
+   botaction("sendMessage",$done_added);
+
+}
+
+elseif($keyword == true && $reply == true){   
+    $sm = json_decode(file_get_contents("https://api.telegram.org/bot1268884251:AAFdUnxyuwCcxPCy17mY8N1PoWKUDfyDV-0/sendMessage?chat_id=$message_dump&text=$reply"),true);
+    $sid = $sm['result']['message_id'];    
+    file_get_contents('http://mr-stark.tk/add_filter.php?kw='.rawurlencode($keyword).'&r='.$sid.'');
+    $add_filter_success = [
+    'chat_id'=>$cid,
+    'text'=>"Added Filter <code>$keyword</code> in <b>$gname</b>",
+    'parse_mode'=>'HTML',
+    'reply_to_message_id'=>$mid,
+    ];  
+    botaction("sendMessage",$add_filter_success);
+}
+
+else{
+        $wrng_frmt = [
+            'chat_id'=>$cid,
+            'text'=>'Wrong Format !!',
+            'reply_to_message_id'=>$mid,
+        ];
+        botaction("sendMessage",$wrng_frmt);
+    }
+}
+else{
+    $no_admi = [
+        'chat_id'=>$cid,
+        'text'=>"Only Admins Can Do This You Noob!! ",
+        'reply_to_message_id'=>$mid
+    ];
+botaction("sendMessage",$no_admi);
+}
+
+}
+
+if($text == '/filters'){
+    $note = '';
+    foreach($filters as $key => $value) {
+        $notw = "<b>•</b> <code>$key</code>\n";
+        $filt .= $notw;
+    }
+    if($filt == ''){
+        $no_filters_dude = [
+            'chat_id'=>$cid,
+            'text'=>"There Are No Notes In $gname...",
+            'reply_to_message_id'=>$mid
+        ];
+        botaction("sendMessage",$no_notes_dude);
+    }
+    else{
+    $filt_display = "Filters In $gname : \n$filt\n";
+    $send_filters = [
+        'chat_id'=>$cid,
+        'text'=>$filt_display,
+        'reply_to_message_id'=>$mid,
+        'parse_mode'=>'HTML'
+    ];
+    botaction("sendMessage",$send_filters);
+}
+}
+if(startsWith($text,'/remove')){
+    if($status == 'creator' || $status == 'administrator'){
+    $rm_filter_name = str_replace('/remove', '', $text);
+    $rm_filter_name = str_replace(' ', '', $rm_filter_name);
+    $filt_id = $filters["$rm_filter_name"];
+$rem_filter_name = rawurlencode($rm_filter_name);
+if($rm_filter_name == ''){
+    $rem_filter_name_no = [
+            'chat_id'=>$cid,
+            'text'=>'Note Name Is Missing My Dear!!',
+            'reply_to_message_id'=>$mid,
+];
+botaction("sendMessage",$rem_filter_name_no);
+
+}
+else{
+    if(array_key_exists($rm_filter_name, $filters)){
+     file_get_contents("http://mr-stark.tk/remove_filter.php?kw=$rem_filter_name&id=$filt_id");
+    $yup_filter_exist = [
+        'chat_id'=>$cid,
+        'text'=>"OK! I Will Stop Replying To <code>$rm_filter_name</code> Now On",
+        'parse_mode'=>'HTML',
+        'reply_to_message_id'=>$mid,
+];
+botaction("sendMessage",$yup_filter_exist);
+
+    }
+    else{
+    $no_note_in = [
+        'chat_id'=>$cid,
+        'text'=>'There Is No Filter By That Name!! How Am I Meant To Stop It 👀',
+        'reply_to_message_id'=>$mid,
+];
+botaction("sendMessage",$no_note_in);
+    }
+}
+}
+}
+
 }
 else{
 $leave2 = [
