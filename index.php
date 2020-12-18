@@ -185,7 +185,7 @@ else{
         'reply_to_message_id'=>$mid,
    ];
    botaction("sendMessage",$done_add);
-file_put_contents("php://stderr", "something happened!");
+file_put_contents("php://stderr", "Added Note!!");
 }		
 	}
 	else{
